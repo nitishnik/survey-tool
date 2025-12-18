@@ -1,41 +1,125 @@
-import { ReactNode } from 'react'
-import { ChevronRight } from 'lucide-react'
-
-interface BreadcrumbItemProps {
-  children: ReactNode
-  isCurrentPage?: boolean
-}
+import * as React from 'react'
+import {
+  Breadcrumb as BreadcrumbNav,
+  BreadcrumbItem as UIBreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb'
+import { cn } from '@/utils/cn'
 
 interface BreadcrumbProps {
-  children: ReactNode
+  children: React.ReactNode
+  className?: string
 }
 
-export function BreadcrumbItem({ children, isCurrentPage }: BreadcrumbItemProps) {
+interface BreadcrumbItemProps {
+  children: React.ReactNode
+  onClick?: () => void
+  href?: string
+  isCurrentPage?: boolean
+  className?: string
+}
+
+/**
+ * BreadcrumbItem component - used as a child of Breadcrumb
+ *
+ * @param onClick - Click handler for navigation (takes precedence over href)
+ * @param href - URL for navigation link
+ * @param isCurrentPage - Whether this item represents the current page
+ * @param className - Additional CSS classes
+ */
+export function BreadcrumbItem({
+  children,
+  onClick,
+  href,
+  isCurrentPage = false,
+  className,
+}: BreadcrumbItemProps) {
   return (
-    <li className="flex items-center">
-      <span
-        className={isCurrentPage ? 'text-gray-900 font-medium' : 'text-gray-500'}
-      >
-        {children}
-      </span>
-    </li>
+    <UIBreadcrumbItem className={className}>
+      {isCurrentPage ? (
+        <BreadcrumbPage>{children}</BreadcrumbPage>
+      ) : onClick ? (
+        <BreadcrumbLink onClick={onClick} className="cursor-pointer">
+          {children}
+        </BreadcrumbLink>
+      ) : href ? (
+        <BreadcrumbLink href={href}>{children}</BreadcrumbLink>
+      ) : (
+        // Non-clickable item (no onClick or href) - render as plain text
+        <span className="text-muted-foreground">{children}</span>
+      )}
+    </UIBreadcrumbItem>
   )
 }
 
-export default function Breadcrumb({ children }: BreadcrumbProps) {
+BreadcrumbItem.displayName = 'BreadcrumbItem'
+
+/**
+ * Reusable Breadcrumb component
+ *
+ * @example
+ * ```tsx
+ * <Breadcrumb>
+ *   <BreadcrumbItem onClick={() => navigate("/categories")}>
+ *     Category Management
+ *   </BreadcrumbItem>
+ *   <BreadcrumbItem isCurrentPage>
+ *     Add New Category
+ *   </BreadcrumbItem>
+ * </Breadcrumb>
+ * ```
+ */
+export default function Breadcrumb({ children, className }: BreadcrumbProps) {
+  const childrenArray = React.Children.toArray(children)
+
+  if (childrenArray.length === 0) {
+    return null
+  }
+
+  // Filter and process valid BreadcrumbItem children
+  const validChildren = childrenArray.filter(
+    (child): child is React.ReactElement<BreadcrumbItemProps> =>
+      React.isValidElement(child) && child.type === BreadcrumbItem
+  )
+
+  if (validChildren.length === 0) {
+    return null
+  }
+
+  // Check if any child has isCurrentPage explicitly set
+  const hasExplicitCurrentPage = validChildren.some(
+    (child) => child.props.isCurrentPage === true
+  )
+
   return (
-    <nav aria-label="Breadcrumb" className="mb-4">
-      <ol className="flex items-center gap-2 text-sm">
-        {Array.isArray(children)
-          ? children.map((child, index) => (
-              <div key={index} className="flex items-center gap-2">
-                {index > 0 && <ChevronRight className="w-4 h-4 text-gray-400" />}
-                {child}
-              </div>
-            ))
-          : children}
-      </ol>
-    </nav>
+    <BreadcrumbNav className={cn(className)}>
+      <BreadcrumbList>
+        {validChildren.map((child, index) => {
+          const isLast = index === validChildren.length - 1
+          const isCurrentPage =
+            child.props.isCurrentPage ?? (!hasExplicitCurrentPage && isLast)
+
+          // Clone the child with isCurrentPage prop if needed
+          const childWithProps =
+            !child.props.isCurrentPage && isCurrentPage
+              ? React.cloneElement(child, { isCurrentPage: true })
+              : child
+
+          return (
+            <React.Fragment key={index}>
+              {childWithProps}
+              {!isLast && <BreadcrumbSeparator />}
+            </React.Fragment>
+          )
+        })}
+      </BreadcrumbList>
+    </BreadcrumbNav>
   )
 }
+
+Breadcrumb.displayName = 'Breadcrumb'
+
 

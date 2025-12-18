@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { ErrorMessage } from 'formik'
-import { ArrowLeft, Save, Plus, Trash2 } from 'lucide-react'
+import { Save, Plus, Trash2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import TargetAudienceSelector from '@/features/survey-management/add-edit-survey/components/target-audience-selector'
 import SurveySelector from './components/survey-selector'
@@ -37,14 +37,8 @@ export default function AddEditWorkshop() {
   return (
     <div className="space-y-6">
       <Breadcrumb>
-        <BreadcrumbItem>
-          <ArrowLeft className="w-4 h-4 mr-2 text-gray-500" />
-          <span
-            onClick={() => navigate(ROUTES.WORKSHOPS.LIST)}
-            className="cursor-pointer hover:text-primary transition-colors"
-          >
-            Workshops
-          </span>
+        <BreadcrumbItem onClick={() => navigate(ROUTES.WORKSHOPS.LIST)}>
+          Workshops
         </BreadcrumbItem>
         <BreadcrumbItem isCurrentPage>
           {isEditMode ? 'Edit Workshop' : 'Create Workshop'}

@@ -7,7 +7,6 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Plus, Search } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { ROUTES } from '@/routes/route'
-import Breadcrumb, { BreadcrumbItem } from '@/components/common/breadcrumb'
 import { useAppSelector } from '@/store'
 import { useAuthState } from '@/hooks/useAuthState'
 import { canCreateWorkshop } from '@/utils/permissionsUtil'
@@ -29,10 +28,6 @@ export default function WorkshopList() {
 
   return (
     <div className="space-y-6">
-      <Breadcrumb>
-        <BreadcrumbItem isCurrentPage>Workshops</BreadcrumbItem>
-      </Breadcrumb>
-
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900">Workshops</h1>
         {canCreateWorkshop(userRole) && (
