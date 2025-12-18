@@ -1,9 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
 import { Survey, SurveyFormData } from './survey-management.types'
-import localStorageService from '@/services/localStorageService'
-import { SURVEY_STATUS } from '@/constants/enums'
-import type { RootState } from '@/store'
-import auditService, { AuditAction, AuditEntity } from '@/services/auditService'
+import { surveyAPI } from '@/services/apiService'
 
 interface SurveyState {
   surveys: Survey[]
@@ -24,10 +21,9 @@ export const fetchSurveys = createAsyncThunk(
   'survey/fetchSurveys',
   async (_, { rejectWithValue }) => {
     try {
-      const surveys = localStorageService.getAll<Survey>('SURVEYS')
-      return surveys
-    } catch (error) {
-      return rejectWithValue('Failed to fetch surveys')
+      return await surveyAPI.getAll()
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.error || 'Failed to fetch surveys')
     }
   }
 )
@@ -36,49 +32,20 @@ export const fetchSurveyById = createAsyncThunk(
   'survey/fetchSurveyById',
   async (id: string, { rejectWithValue }) => {
     try {
-      const survey = localStorageService.getById<Survey>('SURVEYS', id)
-      if (!survey) {
-        return rejectWithValue('Survey not found')
-      }
-      return survey
-    } catch (error) {
-      return rejectWithValue('Failed to fetch survey')
+      return await surveyAPI.getById(id)
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.error || 'Failed to fetch survey')
     }
   }
 )
 
 export const createSurvey = createAsyncThunk(
   'survey/createSurvey',
-  async (surveyData: SurveyFormData, { rejectWithValue, getState }) => {
+  async (surveyData: SurveyFormData, { rejectWithValue }) => {
     try {
-      const state = getState() as RootState
-      const currentUser = state.auth.user
-      
-      if (!currentUser) {
-        return rejectWithValue('User not authenticated')
-      }
-
-      const newSurvey: Survey = {
-        id: `survey_${Date.now()}`,
-        ...surveyData,
-        status: SURVEY_STATUS.DRAFT,
-        createdBy: currentUser.id,
-        createdAt: new Date().toISOString(),
-        version: 1,
-      }
-
-      const created = localStorageService.create<Survey>('SURVEYS', newSurvey)
-      
-      // Audit log
-      auditService.log(AuditAction.CREATE, AuditEntity.SURVEY, created.id, {
-        userId: currentUser.id,
-        userEmail: currentUser.email,
-        entityName: created.title,
-      })
-      
-      return created
-    } catch (error) {
-      return rejectWithValue('Failed to create survey')
+      return await surveyAPI.create(surveyData)
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.error || 'Failed to create survey')
     }
   }
 )
@@ -87,166 +54,46 @@ export const updateSurvey = createAsyncThunk(
   'survey/updateSurvey',
   async (
     { id, updates }: { id: string; updates: Partial<SurveyFormData> },
-    { rejectWithValue, getState }
+    { rejectWithValue }
   ) => {
     try {
-      const existing = localStorageService.getById<Survey>('SURVEYS', id)
-      if (!existing) {
-        return rejectWithValue('Survey not found')
-      }
-
-      // Only allow updating draft surveys
-      if (existing.status !== SURVEY_STATUS.DRAFT) {
-        return rejectWithValue('Cannot update published or closed surveys')
-      }
-
-      // Track changes for audit
-      const changes: Record<string, { old: any; new: any }> = {}
-      Object.keys(updates).forEach((key) => {
-        const typedKey = key as keyof SurveyFormData
-        if (existing[typedKey as keyof Survey] !== updates[typedKey]) {
-          changes[key] = {
-            old: existing[typedKey as keyof Survey],
-            new: updates[typedKey],
-          }
-        }
-      })
-
-      const updated = localStorageService.update<Survey>('SURVEYS', id, {
-        ...updates,
-        version: existing.version + 1,
-      })
-
-      if (!updated) {
-        return rejectWithValue('Failed to update survey')
-      }
-
-      // Audit log
-      const state = getState() as RootState
-      const currentUser = state.auth.user
-      if (currentUser) {
-        auditService.log(AuditAction.UPDATE, AuditEntity.SURVEY, id, {
-          userId: currentUser.id,
-          userEmail: currentUser.email,
-          entityName: updated.title,
-          changes: Object.keys(changes).length > 0 ? changes : undefined,
-        })
-      }
-
-      return updated
-    } catch (error) {
-      return rejectWithValue('Failed to update survey')
+      return await surveyAPI.update(id, updates)
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.error || 'Failed to update survey')
     }
   }
 )
 
 export const deleteSurvey = createAsyncThunk(
   'survey/deleteSurvey',
-  async (id: string, { rejectWithValue, getState }) => {
+  async (id: string, { rejectWithValue }) => {
     try {
-      const existing = localStorageService.getById<Survey>('SURVEYS', id)
-      if (!existing) {
-        return rejectWithValue('Survey not found')
-      }
-
-      // Only allow deleting draft surveys
-      if (existing.status !== SURVEY_STATUS.DRAFT) {
-        return rejectWithValue('Cannot delete published or closed surveys')
-      }
-
-      const deleted = localStorageService.delete('SURVEYS', id)
-      if (!deleted) {
-        return rejectWithValue('Failed to delete survey')
-      }
-
-      // Audit log
-      const state = getState() as RootState
-      const currentUser = state.auth.user
-      if (currentUser) {
-        auditService.log(AuditAction.DELETE, AuditEntity.SURVEY, id, {
-          userId: currentUser.id,
-          userEmail: currentUser.email,
-          entityName: existing.title,
-        })
-      }
-
+      await surveyAPI.delete(id)
       return id
-    } catch (error) {
-      return rejectWithValue('Failed to delete survey')
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.error || 'Failed to delete survey')
     }
   }
 )
 
 export const publishSurvey = createAsyncThunk(
   'survey/publishSurvey',
-  async (id: string, { rejectWithValue, getState }) => {
+  async (id: string, { rejectWithValue }) => {
     try {
-      const existing = localStorageService.getById<Survey>('SURVEYS', id)
-      if (!existing) {
-        return rejectWithValue('Survey not found')
-      }
-
-      if (existing.status !== SURVEY_STATUS.DRAFT) {
-        return rejectWithValue('Only draft surveys can be published')
-      }
-
-      const updated = localStorageService.update<Survey>('SURVEYS', id, {
-        status: SURVEY_STATUS.PUBLISHED,
-      })
-
-      if (!updated) {
-        return rejectWithValue('Failed to publish survey')
-      }
-
-      // Audit log
-      const state = getState() as RootState
-      const currentUser = state.auth.user
-      if (currentUser) {
-        auditService.log(AuditAction.PUBLISH, AuditEntity.SURVEY, id, {
-          userId: currentUser.id,
-          userEmail: currentUser.email,
-          entityName: updated.title,
-        })
-      }
-
-      return updated
-    } catch (error) {
-      return rejectWithValue('Failed to publish survey')
+      return await surveyAPI.publish(id)
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.error || 'Failed to publish survey')
     }
   }
 )
 
 export const closeSurvey = createAsyncThunk(
   'survey/closeSurvey',
-  async (id: string, { rejectWithValue, getState }) => {
+  async (id: string, { rejectWithValue }) => {
     try {
-      const existing = localStorageService.getById<Survey>('SURVEYS', id)
-      if (!existing) {
-        return rejectWithValue('Survey not found')
-      }
-
-      const updated = localStorageService.update<Survey>('SURVEYS', id, {
-        status: SURVEY_STATUS.CLOSED,
-      })
-
-      if (!updated) {
-        return rejectWithValue('Failed to close survey')
-      }
-
-      // Audit log
-      const state = getState() as RootState
-      const currentUser = state.auth.user
-      if (currentUser) {
-        auditService.log(AuditAction.CLOSE, AuditEntity.SURVEY, id, {
-          userId: currentUser.id,
-          userEmail: currentUser.email,
-          entityName: updated.title,
-        })
-      }
-
-      return updated
-    } catch (error) {
-      return rejectWithValue('Failed to close survey')
+      return await surveyAPI.close(id)
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.error || 'Failed to close survey')
     }
   }
 )

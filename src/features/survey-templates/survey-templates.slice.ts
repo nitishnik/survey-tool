@@ -1,7 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import { SurveyTemplate, CreateTemplateData } from './survey-templates.types'
-import localStorageService from '@/services/localStorageService'
-import type { RootState } from '@/store'
+import { templateAPI } from '@/services/apiService'
 
 interface TemplateState {
   templates: SurveyTemplate[]
@@ -19,37 +18,20 @@ export const fetchTemplates = createAsyncThunk(
   'templates/fetchTemplates',
   async (_, { rejectWithValue }) => {
     try {
-      const templates = localStorageService.getAll<SurveyTemplate>('TEMPLATES')
-      return templates
-    } catch (error) {
-      return rejectWithValue('Failed to fetch templates')
+      return await templateAPI.getAll()
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.error || 'Failed to fetch templates')
     }
   }
 )
 
 export const createTemplate = createAsyncThunk(
   'templates/createTemplate',
-  async (templateData: CreateTemplateData, { rejectWithValue, getState }) => {
+  async (templateData: CreateTemplateData, { rejectWithValue }) => {
     try {
-      const state = getState() as RootState
-      const currentUser = state.auth.user
-
-      if (!currentUser) {
-        return rejectWithValue('User not authenticated')
-      }
-
-      const newTemplate: SurveyTemplate = {
-        id: `template_${Date.now()}`,
-        ...templateData,
-        createdBy: currentUser.id,
-        createdAt: new Date().toISOString(),
-        usageCount: 0,
-      }
-
-      const created = localStorageService.create<SurveyTemplate>('TEMPLATES', newTemplate)
-      return created
-    } catch (error) {
-      return rejectWithValue('Failed to create template')
+      return await templateAPI.create(templateData)
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.error || 'Failed to create template')
     }
   }
 )
@@ -58,13 +40,10 @@ export const deleteTemplate = createAsyncThunk(
   'templates/deleteTemplate',
   async (id: string, { rejectWithValue }) => {
     try {
-      const deleted = localStorageService.delete('TEMPLATES', id)
-      if (!deleted) {
-        return rejectWithValue('Failed to delete template')
-      }
+      await templateAPI.delete(id)
       return id
-    } catch (error) {
-      return rejectWithValue('Failed to delete template')
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.error || 'Failed to delete template')
     }
   }
 )
@@ -73,22 +52,9 @@ export const incrementTemplateUsage = createAsyncThunk(
   'templates/incrementUsage',
   async (id: string, { rejectWithValue }) => {
     try {
-      const existing = localStorageService.getById<SurveyTemplate>('TEMPLATES', id)
-      if (!existing) {
-        return rejectWithValue('Template not found')
-      }
-
-      const updated = localStorageService.update<SurveyTemplate>('TEMPLATES', id, {
-        usageCount: existing.usageCount + 1,
-      })
-
-      if (!updated) {
-        return rejectWithValue('Failed to update template')
-      }
-
-      return updated
-    } catch (error) {
-      return rejectWithValue('Failed to update template')
+      return await templateAPI.incrementUsage(id)
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.error || 'Failed to update template')
     }
   }
 )

@@ -1,8 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import { Workshop, WorkshopFormData } from './workshop-planning.types'
-import localStorageService from '@/services/localStorageService'
-import { WORKSHOP_STATUS } from '@/constants/enums'
-import type { RootState } from '@/store'
+import { workshopAPI } from '@/services/apiService'
 
 interface WorkshopState {
   workshops: Workshop[]
@@ -23,10 +21,9 @@ export const fetchWorkshops = createAsyncThunk(
   'workshop/fetchWorkshops',
   async (_, { rejectWithValue }) => {
     try {
-      const workshops = localStorageService.getAll<Workshop>('WORKSHOPS')
-      return workshops
-    } catch (error) {
-      return rejectWithValue('Failed to fetch workshops')
+      return await workshopAPI.getAll()
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.error || 'Failed to fetch workshops')
     }
   }
 )
@@ -35,42 +32,20 @@ export const fetchWorkshopById = createAsyncThunk(
   'workshop/fetchWorkshopById',
   async (id: string, { rejectWithValue }) => {
     try {
-      const workshop = localStorageService.getById<Workshop>('WORKSHOPS', id)
-      if (!workshop) {
-        return rejectWithValue('Workshop not found')
-      }
-      return workshop
-    } catch (error) {
-      return rejectWithValue('Failed to fetch workshop')
+      return await workshopAPI.getById(id)
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.error || 'Failed to fetch workshop')
     }
   }
 )
 
 export const createWorkshop = createAsyncThunk(
   'workshop/createWorkshop',
-  async (workshopData: WorkshopFormData, { rejectWithValue, getState }) => {
+  async (workshopData: WorkshopFormData, { rejectWithValue }) => {
     try {
-      const state = getState() as RootState
-      const currentUser = state.auth.user
-
-      if (!currentUser) {
-        return rejectWithValue('User not authenticated')
-      }
-
-      const newWorkshop: Workshop = {
-        id: `workshop_${Date.now()}`,
-        ...workshopData,
-        status: WORKSHOP_STATUS.DRAFT,
-        createdBy: currentUser.id,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        version: 1,
-      }
-
-      const created = localStorageService.create<Workshop>('WORKSHOPS', newWorkshop)
-      return created
-    } catch (error) {
-      return rejectWithValue('Failed to create workshop')
+      return await workshopAPI.create(workshopData)
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.error || 'Failed to create workshop')
     }
   }
 )
@@ -79,16 +54,9 @@ export const updateWorkshop = createAsyncThunk(
   'workshop/updateWorkshop',
   async ({ id, updates }: { id: string; updates: Partial<WorkshopFormData> }, { rejectWithValue }) => {
     try {
-      const updated = localStorageService.update<Workshop>('WORKSHOPS', id, {
-        ...updates,
-        updatedAt: new Date().toISOString(),
-      })
-      if (!updated) {
-        return rejectWithValue('Failed to update workshop')
-      }
-      return updated
-    } catch (error) {
-      return rejectWithValue('Failed to update workshop')
+      return await workshopAPI.update(id, updates)
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.error || 'Failed to update workshop')
     }
   }
 )
@@ -97,13 +65,10 @@ export const deleteWorkshop = createAsyncThunk(
   'workshop/deleteWorkshop',
   async (id: string, { rejectWithValue }) => {
     try {
-      const deleted = localStorageService.delete('WORKSHOPS', id)
-      if (!deleted) {
-        return rejectWithValue('Failed to delete workshop')
-      }
+      await workshopAPI.delete(id)
       return id
-    } catch (error) {
-      return rejectWithValue('Failed to delete workshop')
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.error || 'Failed to delete workshop')
     }
   }
 )
@@ -112,23 +77,9 @@ export const scheduleWorkshop = createAsyncThunk(
   'workshop/scheduleWorkshop',
   async (id: string, { rejectWithValue }) => {
     try {
-      const existing = localStorageService.getById<Workshop>('WORKSHOPS', id)
-      if (!existing) {
-        return rejectWithValue('Workshop not found')
-      }
-
-      const updated = localStorageService.update<Workshop>('WORKSHOPS', id, {
-        status: WORKSHOP_STATUS.SCHEDULED,
-        updatedAt: new Date().toISOString(),
-      })
-
-      if (!updated) {
-        return rejectWithValue('Failed to schedule workshop')
-      }
-
-      return updated
-    } catch (error) {
-      return rejectWithValue('Failed to schedule workshop')
+      return await workshopAPI.schedule(id)
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.error || 'Failed to schedule workshop')
     }
   }
 )
@@ -137,23 +88,9 @@ export const completeWorkshop = createAsyncThunk(
   'workshop/completeWorkshop',
   async (id: string, { rejectWithValue }) => {
     try {
-      const existing = localStorageService.getById<Workshop>('WORKSHOPS', id)
-      if (!existing) {
-        return rejectWithValue('Workshop not found')
-      }
-
-      const updated = localStorageService.update<Workshop>('WORKSHOPS', id, {
-        status: WORKSHOP_STATUS.COMPLETED,
-        updatedAt: new Date().toISOString(),
-      })
-
-      if (!updated) {
-        return rejectWithValue('Failed to complete workshop')
-      }
-
-      return updated
-    } catch (error) {
-      return rejectWithValue('Failed to complete workshop')
+      return await workshopAPI.complete(id)
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.error || 'Failed to complete workshop')
     }
   }
 )

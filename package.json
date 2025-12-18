@@ -32,7 +32,8 @@
     "tailwind-merge": "^3.4.0",
     "tailwindcss": "4.1.16",
     "xlsx": "^0.18.5",
-    "yup": "^1.4.0"
+    "yup": "^1.4.0",
+    "axios": "^1.6.2"
   },
   "devDependencies": {
     "@types/node": "^25.0.3",

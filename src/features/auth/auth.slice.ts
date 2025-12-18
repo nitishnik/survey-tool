@@ -1,21 +1,13 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
 import { AuthState, User } from './auth.types'
-import { getStorageItem, setStorageItem, removeStorageItem } from '@/utils/storageUtil'
-import localStorageService from '@/services/localStorageService'
-import { USER_ROLE } from '@/constants/enums'
+import { authAPI } from '@/services/apiService'
+import { httpService } from '@/services/httpService'
 import type { RootState } from '@/store'
 
-const AUTH_STORAGE_KEY = 'survey_tool_auth'
-
-// Load initial auth state from localStorage
-const loadAuthState = (): { user: User | null } => {
-  const stored = getStorageItem<{ user: User | null }>(AUTH_STORAGE_KEY)
-  return stored || { user: null }
-}
-
+// Initialize with null user, will be loaded on app start via getCurrentUser thunk
 const initialState: AuthState = {
-  ...loadAuthState(),
-  isLoggedIn: !!loadAuthState().user,
+  user: null,
+  isLoggedIn: false,
   isLoading: false,
   error: null,
 }
@@ -25,48 +17,29 @@ export const login = createAsyncThunk(
   'auth/login',
   async (credentials: { email: string; password: string }, { rejectWithValue }) => {
     try {
-      // Mock login - in real app, this would be an API call
-      // For now, we'll create a default user or find existing user
-      const users = localStorageService.getAll<User>('USERS')
-      let user = users.find((u) => u.email === credentials.email)
-
-      if (!user) {
-        // Determine role based on email pattern
-        let role = USER_ROLE.ORGANIZER // default
-        const emailLower = credentials.email.toLowerCase()
-        
-        if (emailLower.includes('admin@') || emailLower.startsWith('admin')) {
-          role = USER_ROLE.ADMIN
-        } else if (emailLower.includes('organizer@') || emailLower.startsWith('organizer')) {
-          role = USER_ROLE.ORGANIZER
-        } else if (emailLower.includes('participant@') || emailLower.startsWith('participant')) {
-          role = USER_ROLE.PARTICIPANT
-        } else if (emailLower.includes('viewer@') || emailLower.startsWith('viewer')) {
-          role = USER_ROLE.VIEWER
-        }
-        
-        // Create a default user for demo purposes
-        user = {
-          id: `user_${Date.now()}`,
-          email: credentials.email,
-          name: credentials.email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-          role,
-        }
-        localStorageService.create('USERS', user)
-      }
-
-      // Store auth state
-      setStorageItem(AUTH_STORAGE_KEY, { user })
+      const { user } = await authAPI.login(credentials.email, credentials.password)
       return user
-    } catch (error) {
-      return rejectWithValue('Login failed')
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.error || 'Login failed')
     }
   }
 )
 
 export const logout = createAsyncThunk('auth/logout', async () => {
-  removeStorageItem(AUTH_STORAGE_KEY)
+  authAPI.logout()
 })
+
+export const getCurrentUser = createAsyncThunk(
+  'auth/getCurrentUser',
+  async (_, { rejectWithValue }) => {
+    try {
+      const user = await authAPI.getMe()
+      return user
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.error || 'Failed to get user')
+    }
+  }
+)
 
 const authSlice = createSlice({
   name: 'auth',
@@ -78,7 +51,6 @@ const authSlice = createSlice({
     setUser: (state, action: PayloadAction<User>) => {
       state.user = action.payload
       state.isLoggedIn = true
-      setStorageItem(AUTH_STORAGE_KEY, { user: action.payload })
     },
   },
   extraReducers: (builder) => {
@@ -103,6 +75,23 @@ const authSlice = createSlice({
         state.user = null
         state.isLoggedIn = false
         state.error = null
+      })
+      // Get current user
+      .addCase(getCurrentUser.pending, (state) => {
+        state.isLoading = true
+        state.error = null
+      })
+      .addCase(getCurrentUser.fulfilled, (state, action) => {
+        state.isLoading = false
+        state.user = action.payload
+        state.isLoggedIn = true
+        state.error = null
+      })
+      .addCase(getCurrentUser.rejected, (state, action) => {
+        state.isLoading = false
+        state.user = null
+        state.isLoggedIn = false
+        state.error = action.payload as string
       })
   },
 })
