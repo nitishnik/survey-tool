@@ -1,0 +1,203 @@
+@import "tailwindcss";
+
+@theme {
+  /* Vibrant Nature-Inspired Color Palette */
+  --color-background: hsl(199 38% 95%);
+  --color-foreground: hsl(197 37% 24%);
+  --color-card: hsl(0 0% 100%);
+  --color-card-foreground: hsl(197 37% 24%);
+  --color-popover: hsl(0 0% 100%);
+  --color-popover-foreground: hsl(197 37% 24%);
+  
+  /* Primary - Verdigris (Teal) */
+  --color-primary: hsl(173 58% 39%);
+  --color-primary-foreground: hsl(0 0% 100%);
+  
+  /* Secondary - Sandy Brown (Orange) */
+  --color-secondary: hsl(27 87% 67%);
+  --color-secondary-foreground: hsl(197 37% 24%);
+  
+  /* Muted - Light Charcoal Blue */
+  --color-muted: hsl(199 38% 85%);
+  --color-muted-foreground: hsl(197 37% 39%);
+  
+  /* Accent - Light Verdigris (Teal) */
+  --color-accent: hsl(173 58% 64%);
+  --color-accent-foreground: hsl(197 37% 24%);
+  
+  /* Destructive - Burnt Peach */
+  --color-destructive: hsl(12 76% 61%);
+  --color-destructive-foreground: hsl(0 0% 100%);
+  
+  /* Borders and Inputs */
+  --color-border: hsl(197 37% 70%);
+  --color-input: hsl(197 37% 70%);
+  --color-ring: hsl(173 58% 39%);
+  
+  /* Border Radius */
+  --radius: 0.75rem;
+  
+  /* Chart Colors - Vibrant Nature Palette */
+  --color-chart-1: hsl(173 58% 39%);
+  --color-chart-2: hsl(173 58% 64%);
+  --color-chart-3: hsl(27 87% 67%);
+  --color-chart-4: hsl(12 76% 61%);
+  --color-chart-5: hsl(197 37% 24%);
+}
+
+:root {
+  --background: var(--color-background);
+  --foreground: var(--color-foreground);
+  --card: var(--color-card);
+  --card-foreground: var(--color-card-foreground);
+  --popover: var(--color-popover);
+  --popover-foreground: var(--color-popover-foreground);
+  --primary: var(--color-primary);
+  --primary-foreground: var(--color-primary-foreground);
+  --secondary: var(--color-secondary);
+  --secondary-foreground: var(--color-secondary-foreground);
+  --muted: var(--color-muted);
+  --muted-foreground: var(--color-muted-foreground);
+  --accent: var(--color-accent);
+  --accent-foreground: var(--color-accent-foreground);
+  --destructive: var(--color-destructive);
+  --destructive-foreground: var(--color-destructive-foreground);
+  --border: var(--color-border);
+  --input: var(--color-input);
+  --ring: var(--color-ring);
+  --chart-1: var(--color-chart-1);
+  --chart-2: var(--color-chart-2);
+  --chart-3: var(--color-chart-3);
+  --chart-4: var(--color-chart-4);
+  --chart-5: var(--color-chart-5);
+}
+
+.dark {
+  --background: hsl(200 36% 5%);
+  --foreground: hsl(199 38% 85%);
+  --card: hsl(199 39% 10%);
+  --card-foreground: hsl(199 38% 85%);
+  --popover: hsl(199 39% 10%);
+  --popover-foreground: hsl(199 38% 85%);
+  --primary: hsl(173 58% 51%);
+  --primary-foreground: hsl(200 36% 5%);
+  --secondary: hsl(27 87% 40%);
+  --secondary-foreground: hsl(199 38% 85%);
+  --muted: hsl(196 37% 14%);
+  --muted-foreground: hsl(197 37% 55%);
+  --accent: hsl(173 58% 64%);
+  --accent-foreground: hsl(200 36% 5%);
+  --destructive: hsl(12 76% 49%);
+  --destructive-foreground: hsl(0 0% 100%);
+  --border: hsl(197 37% 19%);
+  --input: hsl(197 37% 19%);
+  --ring: hsl(173 58% 51%);
+  --chart-1: hsl(173 58% 51%);
+  --chart-2: hsl(173 58% 64%);
+  --chart-3: hsl(27 87% 54%);
+  --chart-4: hsl(12 76% 49%);
+  --chart-5: hsl(197 37% 39%);
+}
+
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+/* Radix UI Select animations */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes zoom-in {
+  from {
+    transform: scale(0.95);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+@keyframes zoom-out {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(0.95);
+  }
+}
+
+@keyframes slide-in-from-top {
+  from {
+    transform: translateY(-8px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in-from-bottom {
+  from {
+    transform: translateY(8px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in-from-left {
+  from {
+    transform: translateX(-8px);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-in-from-right {
+  from {
+    transform: translateX(8px);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.animate-in {
+  animation: fade-in 0.15s ease-out, zoom-in 0.15s ease-out;
+}
+
+.animate-out {
+  animation: fade-out 0.15s ease-in, zoom-out 0.15s ease-in;
+}
+
+.slide-in-from-top-2 {
+  animation: slide-in-from-top 0.15s ease-out;
+}
+
+.slide-in-from-bottom-2 {
+  animation: slide-in-from-bottom 0.15s ease-out;
+}
+
+.slide-in-from-left-2 {
+  animation: slide-in-from-left 0.15s ease-out;
+}
+
+.slide-in-from-right-2 {
+  animation: slide-in-from-right 0.15s ease-out;
+}
+
